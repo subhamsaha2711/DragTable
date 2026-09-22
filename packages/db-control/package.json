@@ -1,0 +1,23 @@
+{
+  "name": "@dragtable/db-control",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dragtable/contracts": "0.1.0",
+    "@dragtable/domain": "0.1.0",
+    "@dragtable/auth": "0.1.0",
+    "pg": "^8.13.3",
+    "@dragtable/target-pg": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.11",
+    "typescript": "^5.8.2"
+  }
+}

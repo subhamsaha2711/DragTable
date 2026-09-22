@@ -1,0 +1,51 @@
+# DragTable API — Fastify + workspace packages
+# Build context must be the monorepo root (docker-compose sets context: .)
+FROM node:24-alpine AS deps
+WORKDIR /app
+
+# Root workspace manifest (required)
+COPY package.json ./
+
+# App + packages used by the API
+COPY apps/api/package.json apps/api/
+COPY packages/auth/package.json packages/auth/
+COPY packages/contracts/package.json packages/contracts/
+COPY packages/domain/package.json packages/domain/
+COPY packages/db-control/package.json packages/db-control/
+COPY packages/rbac/package.json packages/rbac/
+COPY packages/target-db/package.json packages/target-db/
+COPY packages/target-pg/package.json packages/target-pg/
+COPY packages/audit/package.json packages/audit/
+COPY packages/realtime/package.json packages/realtime/
+COPY packages/import-export/package.json packages/import-export/
+COPY packages/analytics/package.json packages/analytics/
+
+RUN npm install
+
+FROM node:24-alpine AS runner
+RUN apk add --no-cache wget
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3001
+ENV HOST=0.0.0.0
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./
+COPY apps/api ./apps/api
+COPY packages/auth ./packages/auth
+COPY packages/contracts ./packages/contracts
+COPY packages/domain ./packages/domain
+COPY packages/db-control ./packages/db-control
+COPY packages/rbac ./packages/rbac
+COPY packages/target-db ./packages/target-db
+COPY packages/target-pg ./packages/target-pg
+COPY packages/audit ./packages/audit
+COPY packages/realtime ./packages/realtime
+COPY packages/import-export ./packages/import-export
+COPY packages/analytics ./packages/analytics
+
+WORKDIR /app/apps/api
+EXPOSE 3001
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=8 \
+  CMD wget -qO- http://127.0.0.1:3001/health || exit 1
+CMD ["npx", "tsx", "src/index.ts"]

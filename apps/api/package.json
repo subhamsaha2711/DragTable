@@ -1,0 +1,37 @@
+{
+  "name": "@dragtable/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=../../.env src/index.ts",
+    "build": "tsc",
+    "start": "tsx --env-file=../../.env src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dragtable/auth": "file:../../packages/auth",
+    "@dragtable/contracts": "file:../../packages/contracts",
+    "@dragtable/db-control": "file:../../packages/db-control",
+    "@dragtable/domain": "file:../../packages/domain",
+    "@dragtable/rbac": "file:../../packages/rbac",
+    "fastify": "^5.2.1",
+    "@fastify/cors": "^10.0.2",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/websocket": "^11.0.2",
+    "pg": "^8.13.3",
+    "zod": "^3.24.2",
+    "@dragtable/target-db": "file:../../packages/target-db",
+    "@dragtable/audit": "file:../../packages/audit",
+    "@dragtable/realtime": "file:../../packages/realtime",
+    "@dragtable/import-export": "file:../../packages/import-export",
+    "@dragtable/analytics": "file:../../packages/analytics",
+    "@dragtable/target-pg": "file:../../packages/target-pg"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/pg": "^8.11.11",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

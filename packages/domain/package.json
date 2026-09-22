@@ -1,0 +1,18 @@
+{
+  "name": "@dragtable/domain",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dragtable/contracts": "0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "type": "module"
+}

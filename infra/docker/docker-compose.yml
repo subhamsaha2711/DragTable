@@ -1,0 +1,75 @@
+# Prefer root: docker compose up --build
+# This file is equivalent with context relative to infra/docker:
+#   docker compose -f infra/docker/docker-compose.yml up --build
+
+name: dragtable
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dragtable
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dragtable_dev_change_me}
+      POSTGRES_DB: dragtable_control
+    ports:
+      - "5432:5432"
+    volumes:
+      - dragtable_pg:/var/lib/postgresql/data
+      - ../postgres/001_control_plane.sql:/docker-entrypoint-initdb.d/001_control_plane.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dragtable -d dragtable_control"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.api
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      HOST: "0.0.0.0"
+      DATA_DIR: /data
+      TARGET_ADMIN_URL: postgres://dragtable:${POSTGRES_PASSWORD:-dragtable_dev_change_me}@postgres:5432/postgres
+      TARGET_DB_HOST: ${TARGET_DB_HOST:-127.0.0.1}
+      TARGET_DB_PORT: ${TARGET_DB_PORT:-5432}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    volumes:
+      - dragtable_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  dragtable_pg:
+  dragtable_data:
