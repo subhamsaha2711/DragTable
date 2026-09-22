@@ -242,7 +242,7 @@ Limits are enforced in the **API** (workspace) and in **Postgres** (external DDL
 ### Install
 
 ```bash
-git clone https://github.com/subham59036/DragTable.git dragtable
+git clone https://github.com/subhamsaha2711/DragTable.git dragtable
 cd dragtable
 ```
 
