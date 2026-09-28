@@ -4,17 +4,29 @@ import { getControlStore } from "@dragtable/db-control";
 export const SESSION_COOKIE = "dt_session";
 
 export function setSessionCookie(reply: FastifyReply, token: string) {
+  // Default: Secure only when COOKIE_SECURE=1 (HTTPS).
+  // HTTP LAN multi-device testing needs secure:false or the browser drops the cookie.
+  const secure =
+    process.env.COOKIE_SECURE === "1" ||
+    process.env.COOKIE_SECURE === "true";
   reply.setCookie(SESSION_COOKIE, token, {
     path: "/",
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "lax",
     maxAge: 14 * 24 * 60 * 60,
   });
 }
 
 export function clearSessionCookie(reply: FastifyReply) {
-  reply.clearCookie(SESSION_COOKIE, { path: "/" });
+  reply.clearCookie(SESSION_COOKIE, {
+    path: "/",
+    httpOnly: true,
+    secure:
+      process.env.COOKIE_SECURE === "1" ||
+      process.env.COOKIE_SECURE === "true",
+    sameSite: "lax",
+  });
 }
 
 /**

@@ -56,21 +56,16 @@ const app = Fastify({
 
 /**
  * Multi-device CORS (hackathon).
- * - Explicit CORS_ORIGINS always allowed
- * - localhost / 127.0.0.1 always allowed
- * - Private LAN origins (10/8, 172.16–31, 192.168/16) always allowed
- * - Set CORS_ALLOW_ALL=0 to disable the open fallback
+ * With credentials:true the Allow-Origin header MUST be the request Origin string
+ * (not "*"). origin:true makes @fastify/cors reflect it correctly.
+ * Set CORS_ALLOW_ALL=0 and CORS_ORIGINS=... to lock down later.
  */
-const defaultOrigins = [
-  "http://127.0.0.1:3000",
-  "http://localhost:3000",
-];
-const corsOrigins = (process.env.CORS_ORIGINS || defaultOrigins.join(","))
+const allowAll = process.env.CORS_ALLOW_ALL !== "0";
+const corsOrigins = (process.env.CORS_ORIGINS ||
+  "http://127.0.0.1:3000,http://localhost:3000")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
-
-const allowAll = process.env.CORS_ALLOW_ALL !== "0";
 
 function isPrivateLanOrigin(origin: string): boolean {
   try {
@@ -80,7 +75,6 @@ function isPrivateLanOrigin(origin: string): boolean {
     if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
     if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
     if (/^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
-    // Link-local / common dev hostnames
     if (hostname.endsWith(".local")) return true;
     return false;
   } catch {
@@ -89,19 +83,20 @@ function isPrivateLanOrigin(origin: string): boolean {
 }
 
 await app.register(cors, {
-  origin: (origin, cb) => {
-    // Non-browser clients (curl, VS Code, native apps) send no Origin
-    if (!origin) {
-      cb(null, true);
-      return;
-    }
-    if (corsOrigins.includes(origin) || isPrivateLanOrigin(origin) || allowAll) {
-      // Reflect requesting origin so credentials (cookies) work cross-device
-      cb(null, true);
-      return;
-    }
-    cb(new Error(`CORS blocked for origin: ${origin}`), false);
-  },
+  // Reflect Origin so Set-Cookie + credentials work from any device on LAN
+  origin: allowAll
+    ? true
+    : (origin, cb) => {
+        if (!origin) {
+          cb(null, true);
+          return;
+        }
+        if (corsOrigins.includes(origin) || isPrivateLanOrigin(origin)) {
+          cb(null, origin);
+          return;
+        }
+        cb(null, false);
+      },
   credentials: true,
 });
 await app.register(cookie);
@@ -146,7 +141,7 @@ try {
     `Target Postgres: ${isTargetPgEnabled() ? "ENABLED (TARGET_ADMIN_URL)" : "disabled (set TARGET_ADMIN_URL)"}`
   );
   console.log(
-    `CORS: allowAll=${allowAll} explicit=[${corsOrigins.join(", ")}] + private LAN origins`
+    `CORS: allowAll=${allowAll} credentials=true origins=[${corsOrigins.join(", ") || "any"}]`
   );
   console.log(`Data dir: ${process.env.DATA_DIR || ".data (cwd)"}`);
 } catch (err) {
